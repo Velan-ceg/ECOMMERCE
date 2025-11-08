@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Your Cart{% endblock %}
+{% block content %}
+<style>
+  h2 { text-align: center; margin-bottom: 25px; font-weight: 600; }
+
+  .cart-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+  }
+
+  th, td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+  }
+
+  th {
+    background: #f9f9f9;
+    font-weight: 600;
+  }
+
+  img {
+    width: 80px;
+    height: 80px;
+    border-radius: 10px;
+    object-fit: cover;
+  }
+
+  .qty {
+    width: 60px;
+    text-align: center;
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+  }
+
+  .btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .btn-danger { background: #e53935; color: white; }
+  .btn-danger:hover { background: #c62828; }
+
+  .cart-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+    padding: 20px;
+    border-top: 1px solid #ddd;
+    background: #fafafa;
+    border-radius: 10px;
+  }
+
+  .checkout-btn {
+    background: #0b5cff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .checkout-btn:hover {
+    background: #0840b3;
+  }
+
+  .empty {
+    text-align: center;
+    color: #777;
+    font-size: 16px;
+    margin-top: 50px;
+  }
+</style>
+
+<h2>Your Shopping Cart</h2>
+
+{% if items %}
+  <form method="POST" action="{{ url_for('api_cart_update') }}" id="cart-form">
+    <table class="cart-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Title</th>
+          <th>Price</th>
+          <th>Qty</th>
+          <th>Total</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>
+            {% if item.image_path %}
+              {% if item.image_path.startswith('http') %}
+                <img src="{{ item.image_path }}" alt="{{ item.title }}">
+              {% else %}
+                <img src="{{ url_for('static', filename=item.image_path) }}" alt="{{ item.title }}">
+              {% endif %}
+            {% else %}
+              <img src="{{ url_for('static', filename='images/no-image.jpg') }}" alt="No Image">
+            {% endif %}
+          </td>
+
+          <td>{{ item.title }}</td>
+          <td>₹ {{ '%.2f'|format(item.unit_price) }}</td>
+
+          <td>
+            <input type="number" class="qty" name="qty_{{ item.cart_item_id }}" value="{{ item.qty }}" min="1">
+          </td>
+
+          <td>₹ {{ '%.2f'|format(item.unit_price * item.qty) }}</td>
+
+          <td>
+            <button type="button" class="btn btn-danger" onclick="removeItem({{ item.cart_item_id }})">Remove</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </form>
+
+  <div class="cart-summary">
+    <h3>Total: ₹ {{ '%.2f'|format(total) }}</h3>
+    <form action="{{ url_for('checkout') }}" method="get">
+      <button type="submit" class="checkout-btn">Proceed to Checkout</button>
+    </form>
+  </div>
+
+{% else %}
+  <p class="empty">🛒 Your cart is empty.</p>
+{% endif %}
+
+<script>
+
+  async function removeItem(cartItemId) {
+    if (!confirm('Remove this item from cart?')) return;
+
+    const res = await fetch('/api/cart/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: [{ cart_item_id: cartItemId, qty: 0 }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      location.reload();
+    } else {
+      alert('Failed to remove item.');
+    }
+  }
+
+ 
+  const qtyInputs = document.querySelectorAll('.qty');
+  qtyInputs.forEach(input => {
+    input.addEventListener('change', async (e) => {
+      const newQty = parseInt(e.target.value);
+      if (isNaN(newQty) || newQty < 1) return;
+
+      const cartItemId = e.target.name.split('_')[1]; 
+
+      const res = await fetch('/api/cart/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: [{ cart_item_id: parseInt(cartItemId), qty: newQty }]
+        })
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+      
+        const row = e.target.closest('tr');
+        const price = parseFloat(row.querySelector('td:nth-child(3)').innerText.replace('₹','').trim());
+        const newTotal = price * newQty;
+        row.querySelector('td:nth-child(5)').innerText = `₹ ${newTotal.toFixed(2)}`;
+
+        updateCartSummary();
+      } else {
+        alert('Failed to update cart.');
+      }
+    });
+  });
+
+  
+  function updateCartSummary() {
+    let total = 0;
+    document.querySelectorAll('tbody tr').forEach(row => {
+      const totalCell = row.querySelector('td:nth-child(5)');
+      if (totalCell) {
+        const val = parseFloat(totalCell.innerText.replace('₹','').trim());
+        if (!isNaN(val)) total += val;
+      }
+    });
+    const summary = document.querySelector('.cart-summary h3');
+    if (summary) summary.innerText = `Total: ₹ ${total.toFixed(2)}`;
+  }
+</script>
+
+{% endblock %}

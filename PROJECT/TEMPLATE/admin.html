@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel{% endblock %}
+{% block content %}
+<style>
+  h2 { text-align: center; margin-bottom: 20px; font-weight: 600; }
+  form {
+    max-width: 500px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+  label { font-weight: 600; }
+  input, select, textarea {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  .btn {
+    background: #0b5cff;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn:hover { background: #0840b3; }
+  .success, .error {
+    text-align: center;
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 6px;
+  }
+  .success { background: #e8f5e9; color: #2e7d32; }
+  .error { background: #ffebee; color: #c62828; }
+</style>
+
+<h2>Add New Product</h2>
+
+<form method="POST">
+  <label>Product Name:</label>
+  <input type="text" name="title" required>
+
+  <label>SKU:</label>
+  <input type="text" name="sku" required>
+
+  <label>Description:</label>
+  <textarea name="description" required></textarea>
+
+  <label>Price (₹):</label>
+  <input type="number" name="price" step="0.01" required>
+
+  <label>Quantity in Stock:</label>
+  <input type="number" name="qty" min="0" value="10" required>
+
+  <label>Category:</label>
+  <select name="category_id" required>
+    {% for c in categories %}
+    <option value="{{ c.id }}">{{ c.name }}</option>
+    {% endfor %}
+  </select>
+
+  <label>Image URL:</label>
+  <input type="text" name="image_path" placeholder="https://example.com/image.jpg" required>
+
+  <button type="submit" class="btn">Add Product</button>
+</form>
+
+{% if message %}
+  <div class="{{ 'success' if success else 'error' }}">{{ message }}</div>
+{% endif %}
+{% endblock %}

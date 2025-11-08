@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Smartphones{% endblock %}
+{% block content %}
+<style>
+  h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-weight: 600;
+  }
+
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 22px;
+    justify-items: center;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 230px;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 12px;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 26px rgba(0,0,0,0.15);
+  }
+
+
+  .thumb {
+    background: #f4f4f4;
+    height: 340px;             
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-bottom: 1px solid #eee;
+  }
+
+  .thumb img {
+    width: 80%;
+    height: auto;            
+    object-fit: contain;
+    transition: transform 0.3s ease;
+  }
+
+  .thumb img:hover {
+    transform: scale(1.05);
+  }
+
+  .details {
+    text-align: center;
+    padding: 12px;
+  }
+
+  .title {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+
+  .muted {
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 8px;
+    height: 36px;
+    overflow: hidden;
+  }
+
+  .price {
+    color: #0b5cff;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn {
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .btn-add {
+    background: #0b5cff;
+    color: white;
+  }
+
+  .btn-details {
+    background: #eee;
+    color: #333;
+  }
+
+  .details-box {
+    display: none;
+    padding: 10px;
+    border-top: 1px dashed #ddd;
+    background: #fafafa;
+    border-radius: 0 0 10px 10px;
+    font-size: 13px;
+    text-align: left;
+  }
+
+  @media (max-width: 768px) {
+    .thumb { height: 300px; }
+    .card { max-width: 190px; }
+  }
+</style>
+
+<h2>{{ category.name }}</h2>
+
+<div class="grid" id="product-grid">
+  {% for p in products %}
+  <div class="card" data-product-id="{{ p.id }}">
+    <div class="thumb">
+      {% if p.image_path %}
+        {% if p.image_path.startswith('http') %}
+          <img src="{{ p.image_path }}" alt="{{ p.title }}">
+        {% else %}
+          <img src="{{ url_for('static', filename=p.image_path) }}" alt="{{ p.title }}">
+        {% endif %}
+      {% else %}
+        <img src="{{ url_for('static', filename='images/no-image.jpg') }}" alt="No Image">
+      {% endif %}
+    </div>
+
+    <div class="details">
+      <div class="title">{{ p.title }}</div>
+      <div class="muted">{{ p.description[:60] }}{% if p.description|length > 60 %}...{% endif %}</div>
+      <div class="price">₹ {{ '%.2f'|format(p.price) }}</div>
+
+      <div class="actions">
+        <button class="btn btn-add" data-id="{{ p.id }}">Add</button>
+        <button class="btn btn-details" data-id="{{ p.id }}">Details</button>
+      </div>
+    </div>
+
+    <div class="details-box" id="details-{{ p.id }}">
+      <div><strong>SKU:</strong> {{ p.sku }}</div>
+      <div><strong>Stock:</strong> {{ p.qty }}</div>
+      <div style="margin-top:6px">{{ p.description }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  window.ECOM_USER = {{ (user.id if user else 'null') }};
+</script>
+{% endblock %}

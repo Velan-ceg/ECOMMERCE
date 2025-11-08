@@ -1,0 +1,80 @@
+
+{% extends "base.html" %}
+{% block title %}Smartphones{% endblock %}
+{% block content %}
+<style>
+  .thumb {
+  background: #f9f9f9;
+  height: 220px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-bottom: 1px solid #eee;
+  border-radius: 10px 10px 0 0;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; 
+  transition: transform 0.3s ease;
+}
+
+.thumb img:hover {
+  transform: scale(1.05); 
+}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .card{background:white;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.04);min-height:220px;display:flex;flex-direction:column}
+  .thumb{height:140px;background:#f8f8f8;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;overflow:hidden}
+  .thumb img{max-width:100%;max-height:100%;}
+  .title{font-weight:600;font-size:14px;margin-bottom:6px}
+  .price{font-weight:700;color:#0b5cff}
+  .muted{color:#777;font-size:13px}
+  .details{display:none;padding:10px;border-top:1px dashed #eee;margin-top:8px;background:#fafafa;border-radius:6px}
+  .card button{margin-top:auto;border-radius:6px;padding:8px;border:none}
+  .btn-add{background:#0b5cff;color:white}
+  .btn-details{background:#eee;color:#333;margin-left:8px}
+</style>
+
+<h2>{{ category.name }}</h2>
+<div class="grid" id="product-grid">
+  {% for p in products %}
+  <div class="card" data-product-id="{{ p.id }}">
+    <div class="thumb">
+      {% if p.image_path %}
+      {% if p.image_path.startswith('http') %}
+  <img src="{{ p.image_path }}" alt="{{ p.title }}">
+{% else %}
+  <img src="{{ url_for('static', filename=p.image_path) }}" alt="{{ p.title }}">
+{% endif %}
+
+      {% else %}
+      <div style="color:#999">No Image</div>
+      {% endif %}
+    </div>
+    <div class="title">{{ p.title }}</div>
+    <div class="muted">{{ p.description[:70] }}{% if p.description|length > 70 %}...{% endif %}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+      <div class="price">₹ {{ '%.2f'|format(p.price) }}</div>
+      <div>
+        <button class="btn-add" data-id="{{ p.id }}">Add</button>
+        <button class="btn-details" data-id="{{ p.id }}">Details</button>
+      </div>
+    </div>
+
+    <div class="details" id="details-{{ p.id }}">
+      <div><strong>SKU:</strong> {{ p.sku }}</div>
+      <div><strong>Stock:</strong> {{ p.qty }}</div>
+      <div style="margin-top:6px">{{ p.description }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+ 
+  window.ECOM_USER = {{ (user.id if user else 'null') }};
+</script>
+{% endblock %}
